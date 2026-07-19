@@ -1,5 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import './ChatBot.css';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeHighlight from 'rehype-highlight';
 
 const STORAGE_KEY = 'chatbot-historial';
 
@@ -97,8 +100,14 @@ export default function ChatBot() {
           )}
           {messages.map((m, i) => (
             <div key={i} className={`msg-row ${m.role}`}>
-              <div className={`bubble ${m.role}`}>
-                {m.content || (loading && i === messages.length - 1 ? '...' : '')}
+             <div className={`bubble ${m.role}`}>
+                {m.role === 'assistant' ? (
+                  <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
+                    {m.content || (loading && i === messages.length - 1 ? '...' : '')}
+                  </ReactMarkdown>
+                ) : (
+                  m.content
+                )}
               </div>
             </div>
           ))}

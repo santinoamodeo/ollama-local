@@ -195,3 +195,50 @@
   .chat-container { max-width: 100%; height: 100vh; border-radius: 0; }
   .bubble { max-width: 88%; }
 }
+
+.bubble p {
+  margin: 0 0 8px 0;
+}
+.bubble p:last-child {
+  margin-bottom: 0;
+}
+.bubble ul, .bubble ol {
+  margin: 4px 0 8px 0;
+  padding-left: 22px;
+}
+.bubble h1, .bubble h2, .bubble h3 {
+  margin: 12px 0 6px 0;
+  font-size: 1.1em;
+}
+.bubble h1:first-child, .bubble h2:first-child, .bubble h3:first-child {
+  margin-top: 0;
+}
+.bubble code {
+  background: #1a1a26;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  font-family: 'Consolas', 'Courier New', monospace;
+}
+.bubble pre {
+  background: #0f0f1a !important;
+  padding: 12px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 8px 0;
+  border: 1px solid #2a2a3a;
+}
+.bubble pre code {
+  background: transparent;
+  padding: 0;
+}
+.bubble table {
+  border-collapse: collapse;
+  margin: 8px 0;
+  width: 100%;
+}
+.bubble th, .bubble td {
+  border: 1px solid #3a3a4a;
+  padding: 6px 10px;
+  text-align: left;
+}

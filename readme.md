@@ -30,3 +30,7 @@ ollama list
 
 * **Nota 1:** Confirmá que aparece `qwen2.5:7b-instruct-q4_K_M`. Si Ollama ya corre como ícono en la bandeja del sistema, podés saltear la **Terminal 1**.
 * **Nota 2 (Orden de arranque):** El orden de arranque importa: Ollama primero, backend segundo, frontend último. Abrí http://localhost:5173 recién cuando los tres estén arriba.
+* **Nota 3 (Matar Ollama):**
+-  Get-Process | Where-Object {$_.Name -like "*ollama*"}.
+-  Stop-Process -Name "ollama" -Force
+-  Get-NetTCPConnection -LocalPort 11434 -ErrorAction SilentlyContinue
