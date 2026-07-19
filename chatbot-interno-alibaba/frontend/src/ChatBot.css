@@ -286,3 +286,17 @@
   background: #2a2a3a;
   color: #fff;
 }
+
+.stop-btn {
+  padding: 12px 22px;
+  border-radius: 10px;
+  border: none;
+  background: #dc2626;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.stop-btn:hover {
+  opacity: 0.9;
+}

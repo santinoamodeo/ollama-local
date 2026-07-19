@@ -44,6 +44,7 @@ export default function ChatBot() {
   const [error, setError] = useState(null);
   const [modelName, setModelName] = useState('');
   const bottomRef = useRef(null);
+  const abortControllerRef = useRef(null);
 
   useEffect(() => {
     fetch('http://localhost:3001/api/model')
@@ -62,6 +63,10 @@ export default function ChatBot() {
     localStorage.removeItem(STORAGE_KEY);
   };
 
+  const stopGeneration = () => {
+    abortControllerRef.current?.abort();
+  };
+
   const sendMessage = async () => {
     if (!input.trim() || loading) return;
     setError(null);
@@ -71,11 +76,15 @@ export default function ChatBot() {
     setLoading(true);
     setMessages([...newMessages, { role: 'assistant', content: '' }]);
 
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     try {
       const res = await fetch('http://localhost:3001/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: newMessages })
+        body: JSON.stringify({ messages: newMessages }),
+        signal: controller.signal
       });
 
       if (!res.ok) {
@@ -106,10 +115,16 @@ export default function ChatBot() {
         }
       }
     } catch (err) {
-      setError(err.message || 'Error de conexión con el backend.');
-      setMessages(prev => prev.slice(0, -1));
+      if (err.name === 'AbortError') {
+        // Generación detenida por el usuario, no es un error real.
+        // Dejamos el texto parcial que ya se generó, no lo borramos.
+      } else {
+        setError(err.message || 'Error de conexión con el backend.');
+        setMessages(prev => prev.slice(0, -1));
+      }
     } finally {
       setLoading(false);
+      abortControllerRef.current = null;
     }
   };
 
@@ -164,9 +179,15 @@ export default function ChatBot() {
             placeholder="Escribí tu consulta..."
             disabled={loading}
           />
-          <button onClick={sendMessage} disabled={loading} className="send-btn">
-            {loading ? 'Pensando...' : 'Enviar'}
-          </button>
+          {loading ? (
+            <button onClick={stopGeneration} className="stop-btn">
+              ⏹ Detener
+            </button>
+          ) : (
+            <button onClick={sendMessage} className="send-btn">
+              Enviar
+            </button>
+          )}
         </div>
       </div>
     </div>
