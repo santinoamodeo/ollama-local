@@ -1,10 +1,38 @@
 import { useState, useRef, useEffect } from 'react';
-import './ChatBot.css';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
+import './ChatBot.css';
 
 const STORAGE_KEY = 'chatbot-historial';
+
+function extractText(node) {
+  if (typeof node === 'string') return node;
+  if (typeof node === 'number') return node.toString();
+  if (Array.isArray(node)) return node.map(extractText).join('');
+  if (node?.props?.children) return extractText(node.props.children);
+  return '';
+}
+
+function CodeBlock({ children }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    const text = extractText(children);
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
+  return (
+    <div className="code-block-wrapper">
+      <button className="copy-code-btn" onClick={handleCopy}>
+        {copied ? '✓ Copiado' : 'Copiar'}
+      </button>
+      <pre>{children}</pre>
+    </div>
+  );
+}
 
 export default function ChatBot() {
   const [messages, setMessages] = useState(() => {
@@ -100,13 +128,25 @@ export default function ChatBot() {
           )}
           {messages.map((m, i) => (
             <div key={i} className={`msg-row ${m.role}`}>
-             <div className={`bubble ${m.role}`}>
+              <div className={`bubble ${m.role}`}>
                 {m.role === 'assistant' ? (
-                  <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    rehypePlugins={[rehypeHighlight]}
+                    components={{ pre: CodeBlock }}
+                  >
                     {m.content || (loading && i === messages.length - 1 ? '...' : '')}
                   </ReactMarkdown>
                 ) : (
                   m.content
+                )}
+                {m.role === 'assistant' && m.content && (
+                  <button
+                    className="copy-response-btn"
+                    onClick={() => navigator.clipboard.writeText(m.content)}
+                  >
+                    Copiar respuesta
+                  </button>
                 )}
               </div>
             </div>
