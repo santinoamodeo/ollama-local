@@ -433,3 +433,17 @@
   color: #eee;
   padding: 8px;
 }
+
+.logout-btn {
+  background: transparent;
+  color: #888;
+  border: 1px solid #3a3a4a;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.logout-btn:hover {
+  background: #2a2a3a;
+  color: #fff;
+}

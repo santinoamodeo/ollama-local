@@ -12,14 +12,36 @@ const MODELOS_DISPONIBLES = [
   { id: 'qwen2.5-coder:7b-instruct-q4_K_M', nombre: 'Código (Qwen Coder 7B)' },
   { id: 'phi3:mini', nombre: 'Rápido (Phi-3 Mini)' }
 ];
-
 const MODELO_DEFAULT = MODELOS_DISPONIBLES[0].id;
 
-app.get('/api/models', (req, res) => {
+// --- Credenciales y token fijos (POC) ---
+const AUTH_USER = 'distrocuyo';
+const AUTH_PASS = 'iainterna2026';
+const AUTH_TOKEN = 'tok_d1str0cuy0_2026_interno';
+
+// Middleware que protege rutas
+function requireAuth(req, res, next) {
+  const header = req.headers.authorization || '';
+  const token = header.replace('Bearer ', '');
+  if (token !== AUTH_TOKEN) {
+    return res.status(401).json({ error: 'No autorizado. Iniciá sesión de nuevo.' });
+  }
+  next();
+}
+
+app.post('/api/login', (req, res) => {
+  const { username, password } = req.body;
+  if (username === AUTH_USER && password === AUTH_PASS) {
+    return res.json({ token: AUTH_TOKEN });
+  }
+  res.status(401).json({ error: 'Usuario o contraseña incorrectos.' });
+});
+
+app.get('/api/models', requireAuth, (req, res) => {
   res.json({ models: MODELOS_DISPONIBLES, default: MODELO_DEFAULT });
 });
 
-app.post('/api/chat', async (req, res) => {
+app.post('/api/chat', requireAuth, async (req, res) => {
   const { messages, model } = req.body;
   const modeloElegido = MODELOS_DISPONIBLES.find(m => m.id === model)?.id || MODELO_DEFAULT;
 

@@ -42,7 +42,7 @@ function crearConversacionVacia(modeloDefault) {
   };
 }
 
-export default function ChatBot() {
+export default function ChatBot({ token, onLogout }) {
   const [models, setModels] = useState([]);
   const [defaultModel, setDefaultModel] = useState('');
 
@@ -61,21 +61,26 @@ export default function ChatBot() {
   const bottomRef = useRef(null);
   const abortControllerRef = useRef(null);
 
-  // Cargar modelos disponibles del backend al iniciar
   useEffect(() => {
-    fetch('http://localhost:3001/api/models')
-      .then(r => r.json())
+    fetch('http://localhost:3001/api/models', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+      .then(r => {
+        if (!r.ok) throw new Error('sesión inválida');
+        return r.json();
+      })
       .then(d => {
         setModels(d.models);
         setDefaultModel(d.default);
-        // Si todavía no hay conversaciones, crear la primera ya con el modelo default
         setConversations(prev => {
           if (prev.length > 0) return prev;
           return [crearConversacionVacia(d.default)];
         });
       })
-      .catch(() => setError('No se pudo conectar con el backend.'));
-  }, []);
+      .catch(() => {
+        setError('No se pudo conectar con el backend o la sesión expiró.');
+      });
+  }, [token]);
 
   useEffect(() => {
     if (conversations.length > 0 && (!activeId || !conversations.find(c => c.id === activeId))) {
@@ -150,7 +155,10 @@ export default function ChatBot() {
     try {
       const res = await fetch('http://localhost:3001/api/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ messages: newMessages, model: currentModel }),
         signal: controller.signal
       });
@@ -230,6 +238,7 @@ export default function ChatBot() {
               <option key={m.id} value={m.id}>{m.nombre}</option>
             ))}
           </select>
+          <button className="logout-btn" onClick={onLogout}>Salir</button>
         </div>
 
         <div className="chat-area">
