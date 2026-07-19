@@ -394,3 +394,42 @@
   .sidebar { width: 100%; height: auto; max-height: 200px; border-radius: 0; }
   .chat-container { height: calc(100vh - 200px); }
 }
+
+.model-select {
+  margin-left: auto;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+}
+.model-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.model-select {
+  margin-left: auto;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+}
+.model-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.model-select option {
+  background: #1a1a26;
+  color: #eee;
+  padding: 8px;
+}

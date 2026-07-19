@@ -32,50 +32,61 @@ function CodeBlock({ children }) {
   );
 }
 
-function crearConversacionVacia() {
+function crearConversacionVacia(modeloDefault) {
   return {
     id: Date.now().toString(),
     title: 'Nueva conversación',
     messages: [],
+    model: modeloDefault,
     createdAt: Date.now()
   };
 }
 
 export default function ChatBot() {
+  const [models, setModels] = useState([]);
+  const [defaultModel, setDefaultModel] = useState('');
+
   const [conversations, setConversations] = useState(() => {
     const saved = localStorage.getItem(CONVERSATIONS_KEY);
-    const parsed = saved ? JSON.parse(saved) : [];
-    return parsed.length > 0 ? parsed : [crearConversacionVacia()];
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [activeId, setActiveId] = useState(() => {
-    const saved = localStorage.getItem(ACTIVE_ID_KEY);
-    return saved || null;
+    return localStorage.getItem(ACTIVE_ID_KEY) || null;
   });
 
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [modelName, setModelName] = useState('');
   const bottomRef = useRef(null);
   const abortControllerRef = useRef(null);
 
-  // Si no hay activeId válido, apuntar a la primera conversación
+  // Cargar modelos disponibles del backend al iniciar
   useEffect(() => {
-    if (!activeId || !conversations.find(c => c.id === activeId)) {
-      setActiveId(conversations[0]?.id);
+    fetch('http://localhost:3001/api/models')
+      .then(r => r.json())
+      .then(d => {
+        setModels(d.models);
+        setDefaultModel(d.default);
+        // Si todavía no hay conversaciones, crear la primera ya con el modelo default
+        setConversations(prev => {
+          if (prev.length > 0) return prev;
+          return [crearConversacionVacia(d.default)];
+        });
+      })
+      .catch(() => setError('No se pudo conectar con el backend.'));
+  }, []);
+
+  useEffect(() => {
+    if (conversations.length > 0 && (!activeId || !conversations.find(c => c.id === activeId))) {
+      setActiveId(conversations[0].id);
     }
   }, [conversations, activeId]);
 
   useEffect(() => {
-    fetch('http://localhost:3001/api/model')
-      .then(r => r.json())
-      .then(d => setModelName(d.model))
-      .catch(() => setModelName('desconocido'));
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem(CONVERSATIONS_KEY, JSON.stringify(conversations));
+    if (conversations.length > 0) {
+      localStorage.setItem(CONVERSATIONS_KEY, JSON.stringify(conversations));
+    }
   }, [conversations]);
 
   useEffect(() => {
@@ -83,8 +94,9 @@ export default function ChatBot() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [activeId, conversations]);
 
-  const activeConversation = conversations.find(c => c.id === activeId) || conversations[0];
+  const activeConversation = conversations.find(c => c.id === activeId);
   const messages = activeConversation?.messages || [];
+  const currentModel = activeConversation?.model || defaultModel;
 
   const updateActiveMessages = (updater) => {
     setConversations(prev => prev.map(c => {
@@ -94,8 +106,14 @@ export default function ChatBot() {
     }));
   };
 
+  const cambiarModelo = (nuevoModelo) => {
+    setConversations(prev => prev.map(c =>
+      c.id === activeId ? { ...c, model: nuevoModelo } : c
+    ));
+  };
+
   const nuevaConversacion = () => {
-    const nueva = crearConversacionVacia();
+    const nueva = crearConversacionVacia(defaultModel);
     setConversations(prev => [nueva, ...prev]);
     setActiveId(nueva.id);
   };
@@ -104,7 +122,7 @@ export default function ChatBot() {
     e.stopPropagation();
     setConversations(prev => {
       const restantes = prev.filter(c => c.id !== id);
-      return restantes.length > 0 ? restantes : [crearConversacionVacia()];
+      return restantes.length > 0 ? restantes : [crearConversacionVacia(defaultModel)];
     });
   };
 
@@ -121,7 +139,6 @@ export default function ChatBot() {
     setLoading(true);
     updateActiveMessages([...newMessages, { role: 'assistant', content: '' }]);
 
-    // Si es el primer mensaje, usarlo como título de la conversación
     if (messages.length === 0) {
       const titulo = input.trim().slice(0, 40) + (input.length > 40 ? '...' : '');
       setConversations(prev => prev.map(c => c.id === activeId ? { ...c, title: titulo } : c));
@@ -134,7 +151,7 @@ export default function ChatBot() {
       const res = await fetch('http://localhost:3001/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: newMessages }),
+        body: JSON.stringify({ messages: newMessages, model: currentModel }),
         signal: controller.signal
       });
 
@@ -203,7 +220,16 @@ export default function ChatBot() {
       <div className="chat-container">
         <div className="chat-header">
           <span className="chat-title">Chat interno</span>
-          <span className="model-badge">{modelName || '...'}</span>
+          <select
+            className="model-select"
+            value={currentModel}
+            onChange={e => cambiarModelo(e.target.value)}
+            disabled={loading}
+          >
+            {models.map(m => (
+              <option key={m.id} value={m.id}>{m.nombre}</option>
+            ))}
+          </select>
         </div>
 
         <div className="chat-area">

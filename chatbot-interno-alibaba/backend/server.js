@@ -6,21 +6,28 @@ app.use(cors());
 app.use(express.json());
 
 const OLLAMA_URL = 'http://localhost:11434';
-const MODEL = 'qwen2.5:7b-instruct-q4_K_M';
 
-// Nombre del modelo para mostrar en el frontend
-app.get('/api/model', (req, res) => {
-  res.json({ model: MODEL });
+const MODELOS_DISPONIBLES = [
+  { id: 'qwen2.5:7b-instruct-q4_K_M', nombre: 'General (Qwen 7B)' },
+  { id: 'qwen2.5-coder:7b-instruct-q4_K_M', nombre: 'Código (Qwen Coder 7B)' },
+  { id: 'phi3:mini', nombre: 'Rápido (Phi-3 Mini)' }
+];
+
+const MODELO_DEFAULT = MODELOS_DISPONIBLES[0].id;
+
+app.get('/api/models', (req, res) => {
+  res.json({ models: MODELOS_DISPONIBLES, default: MODELO_DEFAULT });
 });
 
 app.post('/api/chat', async (req, res) => {
-  const { messages } = req.body;
+  const { messages, model } = req.body;
+  const modeloElegido = MODELOS_DISPONIBLES.find(m => m.id === model)?.id || MODELO_DEFAULT;
 
   try {
     const ollamaRes = await fetch(`${OLLAMA_URL}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: MODEL, messages, stream: true })
+      body: JSON.stringify({ model: modeloElegido, messages, stream: true })
     });
 
     if (!ollamaRes.ok) {
@@ -45,7 +52,6 @@ app.post('/api/chat', async (req, res) => {
     }
     res.end();
   } catch (err) {
-    // Ollama caído o inaccesible (ECONNREFUSED, etc.)
     if (!res.headersSent) {
       res.status(503).json({ error: 'No se pudo conectar con Ollama. Verificá que esté corriendo (ollama serve).' });
     } else {
@@ -55,4 +61,4 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-app.listen(3001, '0.0.0.0', () => console.log(`Backend en :3001, modelo: ${MODEL}`));
+app.listen(3001, '0.0.0.0', () => console.log('Backend en :3001'));
